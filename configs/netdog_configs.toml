@@ -1,0 +1,26 @@
+[network]
+    node =  "北游16"
+    [network.pingtest]
+        enabled = true
+        pinginterval = 1 
+        [[network.pingtest.device]]
+            name  = "route-1"
+            ip = "10.26.40.220"
+        [[network.pingtest.device]]
+            name  = "route-2"
+            ip = "10.26.40.56"
+    [network.bindwidthtest]
+        enabled = true
+        [[network.bindwidthtest.device]]
+            name  = "route-1"
+            ip = "192.168.1.100" 
+        [[network.bindwidthtest.device]]
+            name  = "route-1"
+            ip = "192.168.1.102" 
+        
+[mail]
+  host = "smtp.163.com"
+  pass = ""
+  port = 465
+  to = ""
+  user = ""
