@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ptonlix/netdog/internal/pingtest"
+	"github.com/ptonlix/netdog/internal/process"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
@@ -35,26 +36,21 @@ type TimePlugin struct {
 	BindwidthTime []TestTime
 
 	logger *zap.Logger
-	ctx    context.Context
 }
 
 func NewTimePlugin(spec string, plugin Pluginer, logger *zap.Logger) *TimePlugin {
-	nyc, _ := time.LoadLocation("Asia/Shanghai")
 
-	return &TimePlugin{P: plugin, C: cron.New(cron.WithLocation(nyc), cron.WithSeconds()), J: &Job{}, Spec: spec, logger: logger}
+	return &TimePlugin{
+		P: plugin,
+		C: cron.New(cron.WithLocation(time.Local), cron.WithSeconds()),
+		J: &Job{}, Spec: spec, logger: logger}
 }
 
 func (t *TimePlugin) StartCronJob(ctx context.Context) {
-
-	t.ctx = ctx
-	fmt.Println(t)
-	t.C.AddJob(t.Spec, t)
-
-	// t.C.AddFunc("*/5 * * * * *", func() {
-
-	// 	fmt.Println("每分钟执行一次")
-	// })
-
+	//t.C.AddJob(t.Spec, t)
+	t.C.AddFunc(t.Spec, func() {
+		t.Run(ctx)
+	})
 	// 启动执行任务
 	t.C.Start()
 	// 退出时关闭计划任务
@@ -63,7 +59,7 @@ func (t *TimePlugin) StartCronJob(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func (t *TimePlugin) Run() {
+func (t *TimePlugin) Run(ctx context.Context) {
 	var err error
 	fmt.Println("Start Run")
 	t.PingTime, err = t.P.PingTestTime()
@@ -81,21 +77,19 @@ func (t *TimePlugin) Run() {
 	now := time.Now()
 	for _, pt := range t.PingTime {
 		timer := time.NewTimer(pt.Start.Sub(now))
-		fmt.Printf("12355")
-		// go func() {
-		// 	<-timer.C
-		// 	// 开启Ping探测
-		// 	ctx, _ := context.WithTimeout(t.ctx, pt.Durtime)
-		// 	test := pingtest.NewPingTestServer(t.logger)
-		// 	t.logger.Debug("", zap.String("debug", fmt.Sprintf("%+v", test.LoopTest(ctx))))
-		// 	// 发送至记录输出模块
-		// }()
-		<-timer.C
-
-		// 开启Ping探测
-		ctx, _ := context.WithTimeout(t.ctx, pt.Durtime)
-		test := pingtest.NewPingTestServer(t.logger)
-		t.logger.Debug("", zap.String("debug", fmt.Sprintf("%+v", test.LoopTest(ctx))))
+		t.logger.Info("Time remaining until the next scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
+		go func() {
+			<-timer.C
+			t.logger.Info("The Ping detection task starts", zap.String("nowtime", fmt.Sprintf("%+v", time.Now())))
+			// 开启Ping探测
+			ctx, _ := context.WithTimeout(ctx, pt.Durtime)
+			test := pingtest.NewPingTestServer(t.logger)
+			pingresult := test.LoopTest(ctx)
+			t.logger.Info("", zap.String("debug", fmt.Sprintf("%+v", pingresult)))
+			// 发送至记录输出模块
+			pro := process.NewProcess(pt.Start, pt.Durtime, t.logger)
+			pro.WritePingData(pingresult)
+		}()
 	}
 
 	// bindwidthTimerList := []*time.Timer{}

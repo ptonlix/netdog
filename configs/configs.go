@@ -18,6 +18,7 @@ var config = new(Config)
 
 type Config struct {
 	Network struct {
+		Node     string `toml:"node"`
 		PingTest struct {
 			Enabled      bool `toml:"enabled"`
 			PingInterval int  `toml:"pinginterval"`
@@ -41,6 +42,9 @@ type Config struct {
 		Pass string `toml:"pass"`
 		To   string `toml:"to"`
 	} `toml:"mail"`
+	Data struct {
+		Pingfile string `toml:"pingfile"`
+	} `toml:"data"`
 }
 
 var (

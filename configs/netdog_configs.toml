@@ -5,10 +5,10 @@
         pinginterval = 1 
         [[network.pingtest.device]]
             name  = "route-1"
-            ip = "10.26.40.220"
+            ip = "192.168.1.1"
         [[network.pingtest.device]]
             name  = "route-2"
-            ip = "10.26.40.56"
+            ip = "192.168.1.1"
     [network.bindwidthtest]
         enabled = true
         [[network.bindwidthtest.device]]
@@ -24,3 +24,7 @@
   port = 465
   to = ""
   user = ""
+
+[data]
+    pingfile = "./data/pingtest"
+
