@@ -3,9 +3,12 @@ package timeplugin
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/ptonlix/netdog/internal/notifyplugin"
 	"github.com/ptonlix/netdog/internal/pingtest"
+	"github.com/ptonlix/netdog/internal/pkg/dogmail"
 	"github.com/ptonlix/netdog/internal/process"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -75,22 +78,42 @@ func (t *TimePlugin) Run(ctx context.Context) {
 
 	//启动定时任务
 	now := time.Now()
+	pingSync := &sync.WaitGroup{}
+	//创建数据处理对象
+	pro := process.NewProcess(t.logger)
 	for _, pt := range t.PingTime {
 		timer := time.NewTimer(pt.Start.Sub(now))
+		tmpPt := pt //协程引用
 		t.logger.Info("Time remaining until the next scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
+		pingSync.Add(1)
 		go func() {
-			<-timer.C
+			defer pingSync.Done()
+			select {
+			case <-timer.C:
+				break
+			case <-ctx.Done():
+				return
+			}
+
 			t.logger.Info("The Ping detection task starts", zap.String("nowtime", fmt.Sprintf("%+v", time.Now())))
 			// 开启Ping探测
 			ctx, _ := context.WithTimeout(ctx, pt.Durtime)
 			test := pingtest.NewPingTestServer(t.logger)
 			pingresult := test.LoopTest(ctx)
 			t.logger.Info("", zap.String("debug", fmt.Sprintf("%+v", pingresult)))
-			// 发送至记录输出模块
-			pro := process.NewProcess(pt.Start, pt.Durtime, t.logger)
-			pro.WritePingData(pingresult)
+			// 记录测试结果
+			pro.WritePingData(tmpPt.Start, tmpPt.Durtime, pingresult)
 		}()
+
 	}
+	pingSync.Wait()
+	//发送到通知模块
+	notify := notifyplugin.NewNotifyPlugin(dogmail.NewDogmail(), t.logger)
+	if err := notify.NofityFromDatafile(); err != nil {
+		t.logger.Error("Send notification failed in running cron", zap.String("error", fmt.Sprintf("%+v", err)))
+		return
+	}
+	t.logger.Info("Send notification successfully in running cron")
 
 	// bindwidthTimerList := []*time.Timer{}
 	// for _, pt := range t.BindwidthTime {

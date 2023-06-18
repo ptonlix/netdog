@@ -31,7 +31,7 @@ func main() {
 		dev[i].Name = d.Name
 	}
 	ctx := context.Background()
-	cronTask := timeplugin.NewTimePlugin("*/10 * * * * *", &myplugin.MyPlugin{}, accessLogger)
+	cronTask := timeplugin.NewTimePlugin(configs.Get().Network.Cron, &myplugin.MyPlugin{}, accessLogger)
 	cronTask.StartCronJob(ctx)
 
 	defer func() {

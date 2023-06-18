@@ -26,8 +26,9 @@ func NewDogmail() *Dogmail {
 
 func (d *Dogmail) Send(content string) error {
 	d.o.Body = content
-	if err := mail.Send(&d.o); err != nil {
-		return err
-	}
+	fmt.Println(content)
+	// if err := mail.Send(&d.o); err != nil {
+	// 	return err
+	// }
 	return nil
 }

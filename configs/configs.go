@@ -19,6 +19,7 @@ var config = new(Config)
 type Config struct {
 	Network struct {
 		Node     string `toml:"node"`
+		Cron     string `toml:"cron"`
 		PingTest struct {
 			Enabled      bool `toml:"enabled"`
 			PingInterval int  `toml:"pinginterval"`

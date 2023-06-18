@@ -1,5 +1,6 @@
 [network]
     node =  "北游16"
+    cron = "*/60 * * * * *" #每10秒进行一次定时任务
     [network.pingtest]
         enabled = true
         pinginterval = 1 
@@ -20,10 +21,10 @@
         
 [mail]
   host = "smtp.163.com"
-  pass = ""
+  pass = "GNTPENWQNFHPQWGS"
   port = 465
-  to = ""
-  user = ""
+  to = "260431910@qq.com"
+  user = "baird0917@163.com"
 
 [data]
     pingfile = "./data/pingtest"

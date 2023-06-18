@@ -16,8 +16,8 @@ func TestWritePingData(t *testing.T) {
 		{DeviceName: "test", DeviceIp: "192.168.1.1", SendPackets: 100, RecvPackets: 100, LossPackets: 0, AvgRtt: time.Millisecond * 20},
 		{DeviceName: "test", DeviceIp: "192.168.1.1", SendPackets: 100, RecvPackets: 100, LossPackets: 0, AvgRtt: time.Millisecond * 20},
 	}
-	process := NewProcess(time.Now(), time.Minute*60, accessLogger)
-	err := process.WritePingData(data)
+	process := NewProcess(accessLogger)
+	err := process.WritePingData(time.Now(), time.Minute*60, data)
 	if err != nil {
 		t.Error("write ping data error", err)
 		return
