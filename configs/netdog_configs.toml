@@ -1,23 +1,25 @@
 [network]
-    node =  "北游16"
-    cron = "*/60 * * * * *" #每10秒进行一次定时任务
+    node =  "北游12"
+    cron = "*/10 * * * * *" #每10秒进行一次定时任务
+    api  = "https://m.laiu8.cn/intelligentapi/todayflightsdata" 
     [network.pingtest]
         enabled = true
         pinginterval = 1 
         [[network.pingtest.device]]
             name  = "route-1"
-            ip = "192.168.1.1"
+            ip = "10.26.40.52"
         [[network.pingtest.device]]
             name  = "route-2"
-            ip = "192.168.1.1"
+            ip = "10.26.40.56"
     [network.bindwidthtest]
         enabled = true
+        bindwidthdurtion = 20s
         [[network.bindwidthtest.device]]
             name  = "route-1"
-            ip = "192.168.1.100" 
+            ip = "10.26.40.52" 
         [[network.bindwidthtest.device]]
             name  = "route-1"
-            ip = "192.168.1.102" 
+            ip = "10.26.40.56" 
         
 [mail]
   host = "smtp.163.com"

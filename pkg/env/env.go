@@ -58,8 +58,6 @@ func (e *environment) t() {}
 
 func init() {
 	env := flag.String("env", "", "请输入运行环境:\n dev:开发环境\n fat:测试环境\n uat:预上线环境\n pro:正式环境\n default:fat:测试环境 \n")
-	clearData = flag.Bool("clear", false, "清除data目录下的用户数据\n")
-	wxqrShow = flag.Bool("qr", false, "显示作者微信二维码 ^_^\n")
 
 	flag.Parse()
 
@@ -80,12 +78,4 @@ func init() {
 // Active 当前配置的env
 func Active() Environment {
 	return active
-}
-
-func ClearDataFlag() bool {
-	return *clearData
-}
-
-func WxqrShowFlag() bool {
-	return *wxqrShow
 }

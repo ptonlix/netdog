@@ -1,0 +1,36 @@
+[data]
+pingfile = './data/pingtest'
+
+[mail]
+host = 'smtp.163.com'
+pass = 'GNTPENWQNFHPQWGS'
+port = 465
+to = '260431910@qq.com'
+user = 'baird0917@163.com'
+
+[network]
+cron = '*/60 * * * * *'
+node = '北游12'
+
+[network.bindwidthtest]
+enabled = true
+
+[[network.bindwidthtest.device]]
+ip = '192.168.1.100'
+name = 'route-1'
+
+[[network.bindwidthtest.device]]
+ip = '192.168.1.102'
+name = 'route-1'
+
+[network.pingtest]
+enabled = true
+pinginterval = 1
+
+[[network.pingtest.device]]
+ip = '192.168.1.1'
+name = 'route-1'
+
+[[network.pingtest.device]]
+ip = '192.168.1.1'
+name = 'route-2'

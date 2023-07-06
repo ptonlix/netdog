@@ -17,6 +17,7 @@ import (
 type TestTime struct {
 	Start   time.Time
 	Durtime time.Duration
+	Detail  string
 }
 type Pluginer interface {
 	PingTestTime() ([]TestTime, error)
@@ -45,7 +46,7 @@ func NewTimePlugin(spec string, plugin Pluginer, logger *zap.Logger) *TimePlugin
 
 	return &TimePlugin{
 		P: plugin,
-		C: cron.New(cron.WithLocation(time.Local), cron.WithSeconds()),
+		C: cron.New(cron.WithLocation(time.Local), cron.WithSeconds(), cron.WithChain(cron.SkipIfStillRunning(cron.DefaultLogger))),
 		J: &Job{}, Spec: spec, logger: logger}
 }
 
@@ -70,6 +71,7 @@ func (t *TimePlugin) Run(ctx context.Context) {
 		t.logger.Error("Get PingTest Time Error:", zap.String("error", fmt.Sprintf("%+v", err)))
 		return
 	}
+	fmt.Println(t.PingTime)
 	t.BindwidthTime, err = t.P.BindwidthTestTime()
 	if err != nil {
 		t.logger.Error("Get Bindwidth Time Error:", zap.String("error", fmt.Sprintf("%+v", err)))
@@ -78,6 +80,7 @@ func (t *TimePlugin) Run(ctx context.Context) {
 
 	//启动定时任务
 	now := time.Now()
+	fmt.Println(now)
 	pingSync := &sync.WaitGroup{}
 	//创建数据处理对象
 	pro := process.NewProcess(t.logger)

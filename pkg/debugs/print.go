@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ptonlix/spokenai/pkg/trace"
+	"github.com/ptonlix/netdog/pkg/trace"
 )
 
 type Option func(*option)

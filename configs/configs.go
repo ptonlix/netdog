@@ -3,7 +3,6 @@ package configs
 import (
 	"bytes"
 	_ "embed"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,6 +19,7 @@ type Config struct {
 	Network struct {
 		Node     string `toml:"node"`
 		Cron     string `toml:"cron"`
+		Api      string `toml:"api"`
 		PingTest struct {
 			Enabled      bool `toml:"enabled"`
 			PingInterval int  `toml:"pinginterval"`
@@ -67,7 +67,7 @@ func init() {
 	if err := viper.Unmarshal(config); err != nil {
 		panic(err)
 	}
-	fmt.Println(config)
+	//fmt.Println(config)
 	viper.SetConfigName(ProjectName + "_configs")
 	viper.AddConfigPath("./configs")
 
