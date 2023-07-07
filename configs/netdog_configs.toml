@@ -13,21 +13,20 @@
             ip = "10.26.40.56"
     [network.bindwidthtest]
         enabled = true
-        bindwidthdurtion = 20s
+        toolpath = "./cmd/ethr"
+        bindwidthduration = "20s"
         [[network.bindwidthtest.device]]
-            name  = "route-1"
-            ip = "10.26.40.52" 
-        [[network.bindwidthtest.device]]
-            name  = "route-1"
-            ip = "10.26.40.56" 
+            name  = "Local"
+            ip = "127.0.0.1" 
         
 [mail]
   host = "smtp.163.com"
-  pass = "GNTPENWQNFHPQWGS"
+  pass = ""
   port = 465
   to = "260431910@qq.com"
   user = "baird0917@163.com"
 
 [data]
     pingfile = "./data/pingtest"
+    bindwidthfile = "./data/bindwidthtest"
 

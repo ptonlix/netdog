@@ -100,11 +100,23 @@ func (f *Flightstime) BindwidthTestTime() ([]timeplugin.TestTime, error) {
 	}
 	infoList := f.Flights[configs.Get().Network.Node]
 	testtime := make([]timeplugin.TestTime, len(infoList)*2)
+	strDurtime := configs.Get().Network.BindwidthTest.BindwidthDuration
+	durtime, err := time.ParseDuration(strDurtime)
+	if err != nil {
+		f.logger.Error("Parse Duration Time Error", zap.String("error", fmt.Sprintf("%+v", err)))
+		return nil, err
+	}
 	for i := 0; i < len(infoList); i++ {
 		flightsDur := infoList[i].ArriveTime.Sub(infoList[i].DepartTime) / 4
 
 		testtime[2*i].Start = infoList[i].DepartTime.Add(flightsDur)
+
+		testtime[2*i].Durtime = durtime
+		testtime[2*i].Detail = infoList[i].LineName
+
 		testtime[2*i+1].Start = infoList[i].DepartTime.Add(3 * flightsDur)
+		testtime[2*i+1].Durtime = durtime
+		testtime[2*i+1].Detail = infoList[i].LineName
 	}
 	return testtime, nil
 }

@@ -29,8 +29,10 @@ type Config struct {
 			} `toml:"device"`
 		} `toml:"pingtest"`
 		BindwidthTest struct {
-			Enabled bool `toml:"enabled"`
-			Device  []struct {
+			Enabled           bool   `toml:"enabled"`
+			Testtool          string `toml:"testtool"`
+			BindwidthDuration string `toml:"bindwidthduration"`
+			Device            []struct {
 				Name string `toml:"name"`
 				Ip   string `toml:"ip"`
 			} `toml:"device"`
@@ -44,7 +46,8 @@ type Config struct {
 		To   string `toml:"to"`
 	} `toml:"mail"`
 	Data struct {
-		Pingfile string `toml:"pingfile"`
+		Pingfile      string `toml:"pingfile"`
+		Bindwidthfile string `toml:"bindwidthfile"`
 	} `toml:"data"`
 }
 

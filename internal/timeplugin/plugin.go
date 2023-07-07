@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ptonlix/netdog/internal/bindwidthtest"
 	"github.com/ptonlix/netdog/internal/notifyplugin"
 	"github.com/ptonlix/netdog/internal/pingtest"
 	"github.com/ptonlix/netdog/internal/pkg/dogmail"
@@ -77,6 +78,7 @@ func (t *TimePlugin) Run(ctx context.Context) {
 		t.logger.Error("Get Bindwidth Time Error:", zap.String("error", fmt.Sprintf("%+v", err)))
 		return
 	}
+	fmt.Println(t.BindwidthTime)
 
 	//启动定时任务
 	now := time.Now()
@@ -85,9 +87,12 @@ func (t *TimePlugin) Run(ctx context.Context) {
 	//创建数据处理对象
 	pro := process.NewProcess(t.logger)
 	for _, pt := range t.PingTime {
+		if pt.Start.Sub(now) < 0 {
+			continue
+		}
 		timer := time.NewTimer(pt.Start.Sub(now))
 		tmpPt := pt //协程引用
-		t.logger.Info("Time remaining until the next scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
+		t.logger.Info("Time remaining until the next PingTest scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
 		pingSync.Add(1)
 		go func() {
 			defer pingSync.Done()
@@ -106,6 +111,33 @@ func (t *TimePlugin) Run(ctx context.Context) {
 			t.logger.Info("", zap.String("debug", fmt.Sprintf("%+v", pingresult)))
 			// 记录测试结果
 			pro.WritePingData(tmpPt.Start, tmpPt.Durtime, pingresult)
+		}()
+
+	}
+	for _, pt := range t.BindwidthTime {
+		if pt.Start.Sub(now) < 0 {
+			continue
+		}
+		timer := time.NewTimer(pt.Start.Sub(now))
+		tmpPt := pt //协程引用
+		t.logger.Info("Time remaining until the next BindwidthTest scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
+		pingSync.Add(1)
+		go func() {
+			defer pingSync.Done()
+			select {
+			case <-timer.C:
+				break
+			case <-ctx.Done():
+				return
+			}
+
+			t.logger.Info("The BindwidthTest detection task starts", zap.String("nowtime", fmt.Sprintf("%+v", time.Now())))
+			// 开启Bindwidth探测
+			test := bindwidthtest.NewBindwidthTestServer(t.logger)
+			bindwidthresult := test.LoopTest()
+			t.logger.Info("", zap.String("debug", fmt.Sprintf("%+v", bindwidthresult)))
+			// 记录测试结果
+			pro.WriteBindwidthData(tmpPt.Start, tmpPt.Durtime, bindwidthresult)
 		}()
 
 	}

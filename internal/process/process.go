@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ptonlix/netdog/configs"
+	"github.com/ptonlix/netdog/internal/bindwidthtest"
 	"github.com/ptonlix/netdog/internal/pingtest"
 	"go.uber.org/zap"
 )
@@ -24,8 +25,21 @@ func NewProcess(logger *zap.Logger) *Process {
 		mutex: &sync.Mutex{}}
 }
 
+func (p *Process) WriteBindwidthData(recordStart time.Time, recordDurtime time.Duration, data []bindwidthtest.TestDeviceResult) error {
+	result := fmt.Sprintf("%s \nPingTest Start time: %+v \nDuration time: %+v\n", p.NetworkNode, recordStart, recordDurtime)
+	for _, v := range data {
+		result += string(v)
+	}
+	err := p.writeFile(configs.Get().Data.Bindwidthfile, result)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *Process) WritePingData(recordStart time.Time, recordDurtime time.Duration, data []pingtest.TestDeviceResult) error {
 	result := fmt.Sprintf("%s \nPingTest Start time: %+v \nDuration time: %+v\n", p.NetworkNode, recordStart, recordDurtime)
+
 	for _, d := range data {
 		typeOfData := reflect.TypeOf(d)
 		ValueOfData := reflect.ValueOf(d)
