@@ -2,6 +2,7 @@ package bindwidthtest
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -19,10 +20,11 @@ type TestDeviceInfo struct {
 }
 
 type BindwidthTestServer struct {
-	wg      sync.WaitGroup
-	Devices []TestDeviceInfo
-	logger  *zap.Logger
-	Tool    string
+	wg          sync.WaitGroup
+	Devices     []TestDeviceInfo
+	logger      *zap.Logger
+	Tool        string
+	TestDurtime string
 }
 
 func NewBindwidthTestServer(logger *zap.Logger) *BindwidthTestServer {
@@ -32,9 +34,10 @@ func NewBindwidthTestServer(logger *zap.Logger) *BindwidthTestServer {
 		devs[i].Name = d.Name
 	}
 	tool := configs.Get().Network.BindwidthTest.Testtool
-	return &BindwidthTestServer{logger: logger, Devices: devs, Tool: tool}
+	durtime := configs.Get().Network.BindwidthTest.BindwidthDuration
+	return &BindwidthTestServer{logger: logger, Devices: devs, Tool: tool, TestDurtime: durtime}
 }
-func (b *BindwidthTestServer) LoopTest() []TestDeviceResult {
+func (b *BindwidthTestServer) LoopTest(ctx context.Context) []TestDeviceResult {
 	var result []TestDeviceResult
 
 	// 函数内的局部变量channel, 专门用来接收函数内所有goroutine的结果
@@ -46,7 +49,7 @@ func (b *BindwidthTestServer) LoopTest() []TestDeviceResult {
 
 	for _, devinfo := range b.Devices {
 		b.wg.Add(1)
-		go b.BindwidthTestG(devinfo.Ip, devinfo.Name, resultChannel)
+		go b.BindwidthTestG(ctx, devinfo.Ip, devinfo.Name, resultChannel)
 	}
 	b.wg.Wait()
 	close(resultChannel)
@@ -68,10 +71,11 @@ func (t *BindwidthTestServer) BindwidthHandle(result *[]TestDeviceResult, result
 	s.Done()
 }
 
-func (b *BindwidthTestServer) BindwidthTestG(ip string, name string, resultChannel chan<- TestDeviceResult) {
+func (b *BindwidthTestServer) BindwidthTestG(ctx context.Context, ip string, name string, resultChannel chan<- TestDeviceResult) {
 	defer b.wg.Done()
 	// 运行ethr命令
-	cmd := exec.Command(b.Tool, "-c", ip)
+	cmd := exec.CommandContext(ctx, b.Tool, "-c", ip, "-n", "0", "-o", configs.EthrLogFile)
+	//cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		b.logger.Error("Get Cmd stdoutPipe Failed", zap.String("error", fmt.Sprintf("%+v", err)))
@@ -90,8 +94,7 @@ func (b *BindwidthTestServer) BindwidthTestG(ip string, name string, resultChann
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(line)
-		if strings.HasPrefix(line, "[") {
+		if strings.Contains(line, "SUM") {
 
 			bindwidthContent += line + "\n"
 		}

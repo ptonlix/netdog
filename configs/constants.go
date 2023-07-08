@@ -12,4 +12,6 @@ const (
 
 	// ProjectAccessLogFile 项目访问日志存放文件
 	ProjectLogFile = "./logs/" + ProjectName + ".log"
+
+	EthrLogFile = "./logs/" + "ethr_client" + ".log"
 )

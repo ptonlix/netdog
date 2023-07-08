@@ -72,9 +72,11 @@ func (f *Flightstime) GetTodayFlightTime() error {
 
 func (f *Flightstime) PingTestTime() ([]timeplugin.TestTime, error) {
 	// 获取获取航班时间
-	if err := f.GetTodayFlightTime(); err != nil {
-		f.logger.Error("PingTest Time Error", zap.String("error", fmt.Sprintf("%+v", err)))
-		return nil, err
+	if len(f.Flights) == 0 {
+		if err := f.GetTodayFlightTime(); err != nil {
+			f.logger.Error("PingTest Time Error", zap.String("error", fmt.Sprintf("%+v", err)))
+			return nil, err
+		}
 	}
 	if _, ok := f.Flights[configs.Get().Network.Node]; !ok {
 		return nil, fmt.Errorf("%s is not running today", configs.Get().Network.Node)
@@ -91,9 +93,11 @@ func (f *Flightstime) PingTestTime() ([]timeplugin.TestTime, error) {
 }
 func (f *Flightstime) BindwidthTestTime() ([]timeplugin.TestTime, error) {
 	// 获取获取航班时间
-	if err := f.GetTodayFlightTime(); err != nil {
-		f.logger.Error("BindwidthTest Time Error", zap.String("error", fmt.Sprintf("%+v", err)))
-		return nil, err
+	if len(f.Flights) == 0 {
+		if err := f.GetTodayFlightTime(); err != nil {
+			f.logger.Error("PingTest Time Error", zap.String("error", fmt.Sprintf("%+v", err)))
+			return nil, err
+		}
 	}
 	if _, ok := f.Flights[configs.Get().Network.Node]; !ok {
 		return nil, fmt.Errorf("%s is not running today", configs.Get().Network.Node)
@@ -110,7 +114,6 @@ func (f *Flightstime) BindwidthTestTime() ([]timeplugin.TestTime, error) {
 		flightsDur := infoList[i].ArriveTime.Sub(infoList[i].DepartTime) / 4
 
 		testtime[2*i].Start = infoList[i].DepartTime.Add(flightsDur)
-
 		testtime[2*i].Durtime = durtime
 		testtime[2*i].Detail = infoList[i].LineName
 

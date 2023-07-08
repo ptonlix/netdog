@@ -55,6 +55,7 @@ func (t *TimePlugin) StartCronJob(ctx context.Context) {
 	//t.C.AddJob(t.Spec, t)
 	t.C.AddFunc(t.Spec, func() {
 		t.Run(ctx)
+		//t.Test()
 	})
 	// 启动执行任务
 	t.C.Start()
@@ -64,26 +65,40 @@ func (t *TimePlugin) StartCronJob(ctx context.Context) {
 	<-ctx.Done()
 }
 
+func (t *TimePlugin) Test() {
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*8)
+	//创建数据处理对象
+	pro := process.NewProcess(t.logger)
+	t.logger.Info("The BindwidthTest detection task starts", zap.String("nowtime", fmt.Sprintf("%+v", time.Now())))
+	// 开启Bindwidth探测
+	test := bindwidthtest.NewBindwidthTestServer(t.logger)
+	bindwidthresult := test.LoopTest(ctx)
+	t.logger.Info("", zap.String("debug", fmt.Sprintf("%+v", bindwidthresult)))
+	// 记录测试结果
+	pro.WriteBindwidthData(time.Now(), time.Second*20, bindwidthresult)
+}
+
 func (t *TimePlugin) Run(ctx context.Context) {
 	var err error
-	fmt.Println("Start Run")
+	fmt.Println("Start Running")
 	t.PingTime, err = t.P.PingTestTime()
 	if err != nil {
 		t.logger.Error("Get PingTest Time Error:", zap.String("error", fmt.Sprintf("%+v", err)))
 		return
 	}
-	fmt.Println(t.PingTime)
+	//fmt.Println(t.PingTime)
 	t.BindwidthTime, err = t.P.BindwidthTestTime()
 	if err != nil {
 		t.logger.Error("Get Bindwidth Time Error:", zap.String("error", fmt.Sprintf("%+v", err)))
 		return
 	}
-	fmt.Println(t.BindwidthTime)
+	//fmt.Println(t.BindwidthTime)
 
 	//启动定时任务
 	now := time.Now()
 	fmt.Println(now)
-	pingSync := &sync.WaitGroup{}
+	runSync := &sync.WaitGroup{}
 	//创建数据处理对象
 	pro := process.NewProcess(t.logger)
 	for _, pt := range t.PingTime {
@@ -92,10 +107,12 @@ func (t *TimePlugin) Run(ctx context.Context) {
 		}
 		timer := time.NewTimer(pt.Start.Sub(now))
 		tmpPt := pt //协程引用
-		t.logger.Info("Time remaining until the next PingTest scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
-		pingSync.Add(1)
+		t.logger.Info("Time remaining until the next PingTest scheduled task is executed:",
+			zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))),
+			zap.String("durtime", fmt.Sprintf("%+v", pt.Durtime)))
+		runSync.Add(1)
 		go func() {
-			defer pingSync.Done()
+			defer runSync.Done()
 			select {
 			case <-timer.C:
 				break
@@ -120,10 +137,12 @@ func (t *TimePlugin) Run(ctx context.Context) {
 		}
 		timer := time.NewTimer(pt.Start.Sub(now))
 		tmpPt := pt //协程引用
-		t.logger.Info("Time remaining until the next BindwidthTest scheduled task is executed:", zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))))
-		pingSync.Add(1)
+		t.logger.Info("Time remaining until the next BindwidthTest scheduled task is executed:",
+			zap.String("subtime", fmt.Sprintf("%+v", pt.Start.Sub(now))),
+			zap.String("durtime", fmt.Sprintf("%+v", pt.Durtime)))
+		runSync.Add(1)
 		go func() {
-			defer pingSync.Done()
+			defer runSync.Done()
 			select {
 			case <-timer.C:
 				break
@@ -133,15 +152,16 @@ func (t *TimePlugin) Run(ctx context.Context) {
 
 			t.logger.Info("The BindwidthTest detection task starts", zap.String("nowtime", fmt.Sprintf("%+v", time.Now())))
 			// 开启Bindwidth探测
+			ctx, _ := context.WithTimeout(ctx, pt.Durtime)
 			test := bindwidthtest.NewBindwidthTestServer(t.logger)
-			bindwidthresult := test.LoopTest()
+			bindwidthresult := test.LoopTest(ctx)
 			t.logger.Info("", zap.String("debug", fmt.Sprintf("%+v", bindwidthresult)))
 			// 记录测试结果
 			pro.WriteBindwidthData(tmpPt.Start, tmpPt.Durtime, bindwidthresult)
 		}()
 
 	}
-	pingSync.Wait()
+	runSync.Wait()
 	//发送到通知模块
 	notify := notifyplugin.NewNotifyPlugin(dogmail.NewDogmail(), t.logger)
 	if err := notify.NofityFromDatafile(); err != nil {
@@ -149,11 +169,5 @@ func (t *TimePlugin) Run(ctx context.Context) {
 		return
 	}
 	t.logger.Info("Send notification successfully in running cron")
-
-	// bindwidthTimerList := []*time.Timer{}
-	// for _, pt := range t.BindwidthTime {
-	// 	timer := time.NewTimer(pt.Start.Sub(now))
-	// 	bindwidthTimerList = append(bindwidthTimerList, timer)
-	// }
 
 }

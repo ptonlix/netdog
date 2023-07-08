@@ -13,8 +13,8 @@
             ip = "10.26.40.56"
     [network.bindwidthtest]
         enabled = true
-        toolpath = "./cmd/ethr"
-        bindwidthduration = "20s"
+        testtool = "./cmd/ethr"
+        bindwidthduration = "8s"
         [[network.bindwidthtest.device]]
             name  = "Local"
             ip = "127.0.0.1" 

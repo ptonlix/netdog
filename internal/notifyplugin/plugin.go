@@ -25,11 +25,17 @@ func (n *NotifyPlugin) NofityFromDatafile() error {
 	//读取ping的记录文件
 	pingdata, err := n.readDataFromFile(configs.Get().Data.Pingfile)
 	if err != nil {
-		n.logger.Error("read data from file failed", zap.String("error", fmt.Sprintf("%+v", err)))
-		return err
+		n.logger.Warn("read data from file failed", zap.String("error", fmt.Sprintf("%+v", err)))
 	}
-	//TODO：读取带宽测试的记录文件
-	if err := n.Nofity(string(pingdata)); err != nil {
+	bindwidthdata, err := n.readDataFromFile(configs.Get().Data.Bindwidthfile)
+	if err != nil {
+		n.logger.Warn("read data from file failed", zap.String("error", fmt.Sprintf("%+v", err)))
+	}
+	testResult := string(pingdata) + string(bindwidthdata)
+	if testResult == "" {
+		return fmt.Errorf("data empty, nofity failed")
+	}
+	if err := n.Nofity(testResult); err != nil {
 		return err
 	}
 	return nil
